@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/weather_record.dart';
 import '../providers/weather_provider.dart';
 import '../widgets/weather_table.dart';
+import '../widgets/wind_map_card.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,8 +21,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     'Tarde': <int>[15, 16, 17, 18, 19],
   };
 
-  final Set<String> _selectedDayKeys = <String>{};
+  String? _selectedDayKey;
   final Set<int> _selectedHours = <int>{};
+  WeatherRecord? _selectedRecord;
 
   static final DateFormat _dayLabelFormat = DateFormat('dd/MM/yyyy');
 
@@ -57,19 +59,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   List<WeatherRecord> _filteredRecords(List<WeatherRecord> records) {
     return records.where((record) {
-      final matchesDay = _selectedDayKeys.isEmpty ||
-          _selectedDayKeys.contains(_dayKey(record.dateTime));
+      final matchesDay =
+          _selectedDayKey == null || _selectedDayKey == _dayKey(record.dateTime);
       final matchesHour =
           _selectedHours.isEmpty || _selectedHours.contains(record.dateTime.hour);
       return matchesDay && matchesHour;
     }).toList(growable: false);
   }
 
+  WeatherRecord? _latestRecord(List<WeatherRecord> records) {
+    if (records.isEmpty) {
+      return null;
+    }
+
+    return records.reduce(
+      (current, next) =>
+          next.dateTime.isAfter(current.dateTime) ? next : current,
+    );
+  }
+
+  bool _containsRecord(List<WeatherRecord> records, WeatherRecord? selected) {
+    if (selected == null) {
+      return false;
+    }
+
+    return records.any(
+      (record) => record.dateTime.isAtSameMomentAs(selected.dateTime),
+    );
+  }
+
   void _sanitizeSelections(List<String> dayKeys, List<int> hours) {
     final daySet = dayKeys.toSet();
     final hourSet = hours.toSet();
 
-    _selectedDayKeys.removeWhere((key) => !daySet.contains(key));
+    if (_selectedDayKey != null && !daySet.contains(_selectedDayKey)) {
+      _selectedDayKey = null;
+    }
     _selectedHours.removeWhere((hour) => !hourSet.contains(hour));
   }
 
@@ -140,6 +165,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final dayKeys = _availableDayKeys(state.records);
     final hours = _availableHours(state.records);
     final filtered = _filteredRecords(state.records);
+    final hasSelectedInFilter = _containsRecord(filtered, _selectedRecord);
+    final activeRecord =
+        hasSelectedInFilter ? _selectedRecord : _latestRecord(filtered);
+
+    if (!hasSelectedInFilter && _selectedRecord != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _selectedRecord = null;
+          });
+        }
+      });
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,79 +185,109 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Text('Datos cargados: ${state.records.length} registros'),
         const SizedBox(height: 8),
         Text('Mostrando: ${filtered.length} registros'),
+        if (activeRecord != null) ...[
+          const SizedBox(height: 12),
+          WindMapCard(record: activeRecord),
+        ],
         const SizedBox(height: 12),
-        Text('Días'),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: dayKeys.map((key) {
-            final date = _dayFromKey(key);
-            final isSelected = _selectedDayKeys.contains(key);
-
-            return FilterChip(
-              label: Text(_dayLabelFormat.format(date)),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    _selectedDayKeys.add(key);
-                  } else {
-                    _selectedDayKeys.remove(key);
-                  }
-                });
-              },
-            );
-          }).toList(growable: false),
-        ),
-        const SizedBox(height: 16),
-        Text('Horas'),
-        const SizedBox(height: 8),
-        Text('Perfiles rápidos'),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _hourProfiles.keys.map((profileName) {
-            final profileHours = _hourProfiles[profileName] ?? const <int>[];
-            final isSelected =
-                profileHours.isNotEmpty &&
-                profileHours.every((hour) => _selectedHours.contains(hour));
-
-            return FilterChip(
-              label: Text(profileName),
-              selected: isSelected,
-              onSelected: (_) => _applyHourProfile(profileName, hours),
-            );
-          }).toList(growable: false),
+        DropdownButtonFormField<String?>(
+          value: _selectedDayKey,
+          isExpanded: true,
+          decoration: const InputDecoration(
+            labelText: 'Fecha',
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+          items: [
+            const DropdownMenuItem<String?>(
+              value: null,
+              child: Text('Todas las fechas'),
+            ),
+            ...dayKeys.map((key) {
+              final date = _dayFromKey(key);
+              return DropdownMenuItem<String?>(
+                value: key,
+                child: Text(_dayLabelFormat.format(date)),
+              );
+            }),
+          ],
+          onChanged: (value) {
+            setState(() {
+              _selectedDayKey = value;
+            });
+          },
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: hours.map((hour) {
-            final isSelected = _selectedHours.contains(hour);
+        Card(
+          child: ExpansionTile(
+            title: const Text('Horas'),
+            subtitle: Text(
+              _selectedHours.isEmpty
+                  ? 'Sin filtro horario'
+                  : '${_selectedHours.length} hora(s) seleccionada(s)',
+            ),
+            childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            children: [
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Perfiles rápidos'),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _hourProfiles.keys.map((profileName) {
+                  final profileHours =
+                      _hourProfiles[profileName] ?? const <int>[];
+                  final isSelected =
+                      profileHours.isNotEmpty &&
+                      profileHours.every((hour) => _selectedHours.contains(hour));
 
-            return FilterChip(
-              label: Text('${hour.toString().padLeft(2, '0')}:00'),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    _selectedHours.add(hour);
-                  } else {
-                    _selectedHours.remove(hour);
-                  }
-                });
-              },
-            );
-          }).toList(growable: false),
+                  return FilterChip(
+                    label: Text(profileName),
+                    selected: isSelected,
+                    onSelected: (_) => _applyHourProfile(profileName, hours),
+                  );
+                }).toList(growable: false),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: hours.map((hour) {
+                  final isSelected = _selectedHours.contains(hour);
+
+                  return FilterChip(
+                    label: Text('${hour.toString().padLeft(2, '0')}:00'),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedHours.add(hour);
+                        } else {
+                          _selectedHours.remove(hour);
+                        }
+                      });
+                    },
+                  );
+                }).toList(growable: false),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         const Divider(),
         const SizedBox(height: 8),
         Expanded(
-          child: WeatherTable(records: filtered),
+          child: WeatherTable(
+            records: filtered,
+            selectedRecord: activeRecord,
+            onRecordSelected: (record) {
+              setState(() {
+                _selectedRecord = record;
+              });
+            },
+          ),
         ),
       ],
     );

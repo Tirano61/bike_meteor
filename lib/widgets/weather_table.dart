@@ -4,9 +4,16 @@ import 'package:intl/intl.dart';
 import '../models/weather_record.dart';
 
 class WeatherTable extends StatelessWidget {
-  WeatherTable({super.key, required this.records});
+  WeatherTable({
+    super.key,
+    required this.records,
+    required this.selectedRecord,
+    required this.onRecordSelected,
+  });
 
   final List<WeatherRecord> records;
+  final WeatherRecord? selectedRecord;
+  final ValueChanged<WeatherRecord> onRecordSelected;
 
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
   final DateFormat _timeFormat = DateFormat('HH:mm');
@@ -28,7 +35,12 @@ class WeatherTable extends StatelessWidget {
               DataColumn(label: Text('Direccion')),
             ],
             rows: records.map((item) {
+              final isSelected =
+                  selectedRecord?.dateTime.isAtSameMomentAs(item.dateTime) ?? false;
+
               return DataRow(
+                selected: isSelected,
+                onSelectChanged: (_) => onRecordSelected(item),
                 cells: [
                   DataCell(Text(_dateFormat.format(item.dateTime))),
                   DataCell(Text(_timeFormat.format(item.dateTime))),
