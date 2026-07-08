@@ -3,6 +3,7 @@ class WeatherRecord {
     required this.dateTime,
     required this.temperature,
     required this.windSpeed,
+    required this.windGust,
     required this.windDirection,
     required this.cardinalDirection,
   });
@@ -10,6 +11,7 @@ class WeatherRecord {
   final DateTime dateTime;
   final double temperature;
   final double windSpeed;
+  final double windGust;
   final double windDirection;
   final String cardinalDirection;
 
@@ -20,6 +22,7 @@ class WeatherRecord {
       dateTime: DateTime.parse(json['dateTime'] as String),
       temperature: _toDouble(json['temperature']),
       windSpeed: _toDouble(json['windSpeed']),
+        windGust: _toDouble(json['windGust']),
       windDirection: direction,
       cardinalDirection: json['cardinalDirection'] as String? ??
           WeatherRecord.degreesToCardinal(direction),
@@ -31,6 +34,7 @@ class WeatherRecord {
       'dateTime': dateTime.toIso8601String(),
       'temperature': temperature,
       'windSpeed': windSpeed,
+      'windGust': windGust,
       'windDirection': windDirection,
       'cardinalDirection': cardinalDirection,
     };

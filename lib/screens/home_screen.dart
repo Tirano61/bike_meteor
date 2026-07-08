@@ -165,6 +165,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final dayKeys = _availableDayKeys(state.records);
     final hours = _availableHours(state.records);
     final filtered = _filteredRecords(state.records);
+    final tableDayKeys = filtered
+      .map((record) => _dayKey(record.dateTime))
+      .toSet()
+      .toList(growable: false)
+      ..sort();
+    final tableDateTitle = tableDayKeys.isEmpty
+      ? 'Sin datos'
+      : tableDayKeys.length == 1
+      ? _dayLabelFormat.format(_dayFromKey(tableDayKeys.first))
+      : 'Varias fechas';
     final hasSelectedInFilter = _containsRecord(filtered, _selectedRecord);
     final activeRecord =
         hasSelectedInFilter ? _selectedRecord : _latestRecord(filtered);
@@ -179,117 +189,144 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       });
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Datos cargados: ${state.records.length} registros'),
-        const SizedBox(height: 8),
-        Text('Mostrando: ${filtered.length} registros'),
-        if (activeRecord != null) ...[
-          const SizedBox(height: 12),
-          WindMapCard(record: activeRecord),
-        ],
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String?>(
-          value: _selectedDayKey,
-          isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Fecha',
-            border: OutlineInputBorder(),
-            isDense: true,
-          ),
-          items: [
-            const DropdownMenuItem<String?>(
-              value: null,
-              child: Text('Todas las fechas'),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tableHeight = (constraints.maxHeight * 0.38).clamp(180.0, 320.0);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                primary: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Datos cargados: ${state.records.length} registros'),
+                    const SizedBox(height: 8),
+                    Text('Mostrando: ${filtered.length} registros'),
+                    if (activeRecord != null) ...[
+                      const SizedBox(height: 12),
+                      WindMapCard(record: activeRecord),
+                    ],
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String?>(
+                      value: _selectedDayKey,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Fecha',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Todas las fechas'),
+                        ),
+                        ...dayKeys.map((key) {
+                          final date = _dayFromKey(key);
+                          return DropdownMenuItem<String?>(
+                            value: key,
+                            child: Text(_dayLabelFormat.format(date)),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedDayKey = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Card(
+                      child: ExpansionTile(
+                        title: const Text('Horas'),
+                        subtitle: Text(
+                          _selectedHours.isEmpty
+                              ? 'Sin filtro horario'
+                              : '${_selectedHours.length} hora(s) seleccionada(s)',
+                        ),
+                        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                        children: [
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text('Perfiles rápidos'),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _hourProfiles.keys.map((profileName) {
+                              final profileHours =
+                                  _hourProfiles[profileName] ?? const <int>[];
+                              final isSelected =
+                                  profileHours.isNotEmpty &&
+                                  profileHours.every(
+                                    (hour) => _selectedHours.contains(hour),
+                                  );
+
+                              return FilterChip(
+                                label: Text(profileName),
+                                selected: isSelected,
+                                onSelected: (
+                                  _,
+                                ) => _applyHourProfile(profileName, hours),
+                              );
+                            }).toList(growable: false),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: hours.map((hour) {
+                              final isSelected = _selectedHours.contains(hour);
+
+                              return FilterChip(
+                                label: Text('${hour.toString().padLeft(2, '0')}:00'),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _selectedHours.add(hour);
+                                    } else {
+                                      _selectedHours.remove(hour);
+                                    }
+                                  });
+                                },
+                              );
+                            }).toList(growable: false),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
             ),
-            ...dayKeys.map((key) {
-              final date = _dayFromKey(key);
-              return DropdownMenuItem<String?>(
-                value: key,
-                child: Text(_dayLabelFormat.format(date)),
-              );
-            }),
+            const SizedBox(height: 8),
+            const Divider(),
+            const SizedBox(height: 8),
+            Text(
+              'Tabla de horas - $tableDateTitle',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: tableHeight,
+              child: WeatherTable(
+                records: filtered,
+                selectedRecord: activeRecord,
+                onRecordSelected: (record) {
+                  setState(() {
+                    _selectedRecord = record;
+                  });
+                },
+              ),
+            ),
           ],
-          onChanged: (value) {
-            setState(() {
-              _selectedDayKey = value;
-            });
-          },
-        ),
-        const SizedBox(height: 12),
-        Card(
-          child: ExpansionTile(
-            title: const Text('Horas'),
-            subtitle: Text(
-              _selectedHours.isEmpty
-                  ? 'Sin filtro horario'
-                  : '${_selectedHours.length} hora(s) seleccionada(s)',
-            ),
-            childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            children: [
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Perfiles rápidos'),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _hourProfiles.keys.map((profileName) {
-                  final profileHours =
-                      _hourProfiles[profileName] ?? const <int>[];
-                  final isSelected =
-                      profileHours.isNotEmpty &&
-                      profileHours.every((hour) => _selectedHours.contains(hour));
-
-                  return FilterChip(
-                    label: Text(profileName),
-                    selected: isSelected,
-                    onSelected: (_) => _applyHourProfile(profileName, hours),
-                  );
-                }).toList(growable: false),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: hours.map((hour) {
-                  final isSelected = _selectedHours.contains(hour);
-
-                  return FilterChip(
-                    label: Text('${hour.toString().padLeft(2, '0')}:00'),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedHours.add(hour);
-                        } else {
-                          _selectedHours.remove(hour);
-                        }
-                      });
-                    },
-                  );
-                }).toList(growable: false),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Divider(),
-        const SizedBox(height: 8),
-        Expanded(
-          child: WeatherTable(
-            records: filtered,
-            selectedRecord: activeRecord,
-            onRecordSelected: (record) {
-              setState(() {
-                _selectedRecord = record;
-              });
-            },
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

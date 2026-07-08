@@ -13,7 +13,8 @@ class OpenMeteoService {
       queryParameters: <String, dynamic>{
         'latitude': -33.7456,
         'longitude': -61.9688,
-        'hourly': 'temperature_2m,wind_speed_10m,wind_direction_10m',
+        'hourly':
+            'temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
         'forecast_days': 10,
         'timezone': 'America/Argentina/Cordoba',
       },

@@ -15,7 +15,6 @@ class WeatherTable extends StatelessWidget {
   final WeatherRecord? selectedRecord;
   final ValueChanged<WeatherRecord> onRecordSelected;
 
-  final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
   final DateFormat _timeFormat = DateFormat('HH:mm');
 
   @override
@@ -23,16 +22,17 @@ class WeatherTable extends StatelessWidget {
     return Scrollbar(
       thumbVisibility: true,
       child: SingleChildScrollView(
+        primary: false,
         scrollDirection: Axis.vertical,
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
             columns: const [
-              DataColumn(label: Text('Fecha')),
               DataColumn(label: Text('Hora')),
-              DataColumn(label: Text('Temperatura')),
+              DataColumn(label: Text('Temp.')),
               DataColumn(label: Text('Viento')),
-              DataColumn(label: Text('Direccion')),
+              DataColumn(label: Text('Ráfaga')),
+              DataColumn(label: Text('Dir.')),
             ],
             rows: records.map((item) {
               final isSelected =
@@ -42,10 +42,10 @@ class WeatherTable extends StatelessWidget {
                 selected: isSelected,
                 onSelectChanged: (_) => onRecordSelected(item),
                 cells: [
-                  DataCell(Text(_dateFormat.format(item.dateTime))),
                   DataCell(Text(_timeFormat.format(item.dateTime))),
                   DataCell(Text('${item.temperature.toStringAsFixed(1)} C')),
                   DataCell(Text('${item.windSpeed.toStringAsFixed(1)} km/h')),
+                  DataCell(Text('${item.windGust.toStringAsFixed(1)} km/h')),
                   DataCell(
                     Text(
                       '${item.windDirection.toStringAsFixed(0)}° ${item.cardinalDirection}',
