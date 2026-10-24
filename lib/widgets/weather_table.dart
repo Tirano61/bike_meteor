@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/weather_record.dart';
+import 'weather_icon.dart';
 
 class WeatherTable extends StatelessWidget {
   WeatherTable({
@@ -43,7 +44,16 @@ class WeatherTable extends StatelessWidget {
                 onSelectChanged: (_) => onRecordSelected(item),
                 cells: [
                   DataCell(Text(_timeFormat.format(item.dateTime))),
-                  DataCell(Text('${item.temperature.toStringAsFixed(1)} C')),
+                  DataCell(
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        WeatherIcon(record: item),
+                        const SizedBox(width: 6),
+                        Text('${item.temperature.toStringAsFixed(1)} C'),
+                      ],
+                    ),
+                  ),
                   DataCell(Text('${item.windSpeed.toStringAsFixed(1)} km/h')),
                   DataCell(Text('${item.windGust.toStringAsFixed(1)} km/h')),
                   DataCell(

@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <application
-        android:label="bike_meteor"
+        android:label="Biker"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

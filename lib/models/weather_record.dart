@@ -6,6 +6,8 @@ class WeatherRecord {
     required this.windGust,
     required this.windDirection,
     required this.cardinalDirection,
+    required this.weatherCode,
+    required this.isDay,
   });
 
   final DateTime dateTime;
@@ -14,6 +16,8 @@ class WeatherRecord {
   final double windGust;
   final double windDirection;
   final String cardinalDirection;
+  final int weatherCode;
+  final bool isDay;
 
   factory WeatherRecord.fromJson(Map<String, dynamic> json) {
     final direction = _toDouble(json['windDirection']);
@@ -22,10 +26,12 @@ class WeatherRecord {
       dateTime: DateTime.parse(json['dateTime'] as String),
       temperature: _toDouble(json['temperature']),
       windSpeed: _toDouble(json['windSpeed']),
-        windGust: _toDouble(json['windGust']),
+      windGust: _toDouble(json['windGust']),
       windDirection: direction,
       cardinalDirection: json['cardinalDirection'] as String? ??
           WeatherRecord.degreesToCardinal(direction),
+      weatherCode: (json['weatherCode'] as num?)?.toInt() ?? 0,
+      isDay: json['isDay'] as bool? ?? true,
     );
   }
 
@@ -37,6 +43,8 @@ class WeatherRecord {
       'windGust': windGust,
       'windDirection': windDirection,
       'cardinalDirection': cardinalDirection,
+      'weatherCode': weatherCode,
+      'isDay': isDay,
     };
   }
 
