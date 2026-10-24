@@ -14,7 +14,8 @@ class OpenMeteoService {
         'latitude': -33.7456,
         'longitude': -61.9688,
         'hourly':
-            'temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
+            'temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,'
+            'weather_code,is_day',
         'forecast_days': 10,
         'timezone': 'America/Argentina/Cordoba',
       },

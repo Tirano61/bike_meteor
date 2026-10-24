@@ -83,6 +83,8 @@ class WeatherNotifier extends StateNotifier<WeatherState> {
     final windSpeeds = _toDoubleList(hourly['wind_speed_10m']);
     final windGusts = _toDoubleList(hourly['wind_gusts_10m']);
     final windDirections = _toDoubleList(hourly['wind_direction_10m']);
+    final weatherCodes = _toDoubleList(hourly['weather_code']);
+    final isDayFlags = _toDoubleList(hourly['is_day']);
 
     final count = [
       times.length,
@@ -90,6 +92,8 @@ class WeatherNotifier extends StateNotifier<WeatherState> {
       windSpeeds.length,
       windGusts.length,
       windDirections.length,
+      weatherCodes.length,
+      isDayFlags.length,
     ].reduce((a, b) => a < b ? a : b);
 
     final records = <WeatherRecord>[];
@@ -103,6 +107,8 @@ class WeatherNotifier extends StateNotifier<WeatherState> {
           windGust: windGusts[i],
           windDirection: direction,
           cardinalDirection: WeatherRecord.degreesToCardinal(direction),
+          weatherCode: weatherCodes[i].toInt(),
+          isDay: isDayFlags[i] == 1,
         ),
       );
     }

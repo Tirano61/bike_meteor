@@ -1,4 +1,4 @@
-name: bike_meteor
+name: Biker
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.2+3
+version: 1.1.2+4
 
 environment:
   sdk: ^3.7.0
@@ -49,6 +49,32 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.6
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icons/icon.png
+  adaptive_icon_foreground: assets/icons/icon.png
+  adaptive_icon_background: "#7FFFD4"
+  adaptive_icon_foreground_inset: 0
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: assets/icons/icon.png
+    background_color: "#7FFFD4"
+    theme_color: "#009688"
+
+flutter_native_splash:
+  color: "#7FFFD4"
+  image: assets/icons/icon.png
+  android: true
+  ios: true
+  web: false
+  android_12:
+    color: "#7FFFD4"
+    image: assets/icons/icon.png
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
